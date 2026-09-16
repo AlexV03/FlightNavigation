@@ -20,6 +20,8 @@ public:
 
 	//Function to calculate the navmesh
 
+	int voxelResolution = 2; //Values are in meters. 2 is 2 meter per voxel in size. leaf node will then be 4 x 2.(2 being the resolution number)
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
