@@ -13,9 +13,17 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNOctreeData
 {
 	GENERATED_BODY()
 
-	TArray<TArray<FDFNNode>> levels;
+	TArray<TArray<FDFNNode>> layers;
 	TArray<FDFNLeafNode> leafNodes;
 
 	TArray<TSet<uint32_t>> mortonCodes; //Used during the first rasterize pass
+
+	void Reset()
+	{
+		layers.Empty();
+		leafNodes.Empty();
+	}
+
+	//int32 GetNodeAmountInLayer()
 };
 
