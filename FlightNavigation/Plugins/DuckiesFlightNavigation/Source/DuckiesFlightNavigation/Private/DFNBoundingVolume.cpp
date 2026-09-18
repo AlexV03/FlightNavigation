@@ -3,6 +3,7 @@
 
 #include "DFNBoundingVolume.h"
 #include "DrawDebugHelpers.h"
+#include "libmorton/morton.h"
 
 // Sets default values
 ADFNBoundingVolume::ADFNBoundingVolume()
