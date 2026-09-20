@@ -16,7 +16,7 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNOctreeData
 	TArray<TArray<FDFNNode>> layers;
 	TArray<FDFNLeafNode> leafNodes;
 
-	TArray<TSet<uint32_t>> mortonCodes; //Used during the first rasterize pass
+	//TArray<TSet<uint64_t>> mortonCodes; //Used during the first rasterize pass
 
 	void Reset()
 	{

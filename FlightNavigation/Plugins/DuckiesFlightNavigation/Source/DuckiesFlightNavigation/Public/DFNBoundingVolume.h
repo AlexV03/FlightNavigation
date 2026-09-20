@@ -21,15 +21,16 @@ public:
 
 	//Function to calculate the navmesh
 
-	int voxelResolution = 200; //Value is in centimeters
+	int voxelResolution = 100; //Value is in centimeters
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	FDFNOctreeData OD; 
+	FDFNOctreeData OctD; 
 
 	unsigned int RoundUp2Pow2(unsigned int value);
+	bool GetNodePosition(float nodeSize, uint_fast64_t mCode, FVector& position) const;
 
 public:	
 	// Called every frame
@@ -37,7 +38,8 @@ public:
 
 	void RasterizeLayer(uint8 layer);
 	void RasterizeLeafNode(FVector& origin, int32 layer);
-	bool CheckCollisionOverlap(FVector bound);
+	void RasterizeFirstLayer();
+	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
 
 #if WITH_EDITOR
 	virtual bool ShouldTickIfViewportsOnly() const override { return true; }
