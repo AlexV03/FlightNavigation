@@ -9,10 +9,10 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 {
 	GENERATED_BODY()
 
-	int layer : 4;
-	int nodeIndex : 22;
-	int subNodeIndex : 6;
-
+	unsigned int layer : 4;			//0 - 15
+	unsigned int nodeIndex : 22;	//0 - 4,194,303
+	unsigned int subNodeIndex : 6;	//0 - 63(only used for indexing voxels inside leaf nodes)
+	
 	//GetLayer()
 	//GetNodeIndex()
 	//GetSubnodeIndex()

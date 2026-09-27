@@ -13,7 +13,8 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNNode
 	FDFNLink firstChild;
 	FDFNLink parent;
 	FDFNLink neighbors[6];
-	uint32_t mortonCode;
+	uint64_t mortonCode;
+	//uint32_t mortonCode;
 	//Bool isEmpty??
 };
 
