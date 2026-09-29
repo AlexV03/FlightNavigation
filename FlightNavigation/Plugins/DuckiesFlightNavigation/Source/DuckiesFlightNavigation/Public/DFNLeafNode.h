@@ -8,7 +8,7 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLeafNode
 {
 	GENERATED_BODY()
 
-	uint64 voxel;
+	uint64 voxel = 0;
 
 	inline bool isEmpty() const { return voxel == 0; }
 	inline bool isFullyBlocked() const { return voxel == 0xFFFFFFFFFFFFFFFFull; }

@@ -37,13 +37,14 @@ protected:
 	uint64 GetChildCode(uint64 parentCode, unsigned int index);
 	int32 GetNodeAmountInLayer(uint8 layer) const;
 	float GetVoxelSize(uint8 layer) const;
+	bool GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const;
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void RasterizeLayer(uint8 layer);
-	void RasterizeLeafNode(FVector& _origin, int32 layer);
+	void RasterizeLeafNode(FVector& _origin, uint8 layer);
 	void RasterizeFirstLayer();
 	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
 	void Generate();
@@ -55,7 +56,8 @@ public:
 private:
 	int32 newVolumeSize = 0;
 	FVector origin;
-
 	static const TArray<FColor> layerColors;
+
 	const FColor& GetColorAt(int32 index) const;
+	void CreateLayerMortonCodes();
 };
