@@ -13,6 +13,9 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 	unsigned int nodeIndex : 22;	//0 - 4,194,303
 	unsigned int subNodeIndex : 6;	//0 - 63(only used for indexing voxels inside leaf nodes)
 	
+	FDFNLink() :
+		layer(15), nodeIndex(0), subNodeIndex(0) {}
+
 	//GetLayer()
 	//GetNodeIndex()
 	//GetSubnodeIndex()

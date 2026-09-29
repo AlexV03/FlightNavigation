@@ -38,6 +38,7 @@ protected:
 	int32 GetNodeAmountInLayer(uint8 layer) const;
 	float GetVoxelSize(uint8 layer) const;
 	bool GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const;
+	bool CheckIfNodeIsBlocked(uint8 layer, uint64 mCode);
 
 public:
 	// Called every frame

@@ -116,6 +116,14 @@ bool ADFNBoundingVolume::GetIndexFromCode(uint8 layer, uint64 mCode, int32& cInd
 	return false;
 }
 
+bool ADFNBoundingVolume::CheckIfNodeIsBlocked(uint8 layer, uint64 mCode)
+{
+	if (layer == octD.NumberLayers - 1)
+		return true;
+
+	return octD.mortonCodes[layer].Contains(GetParentCode(mCode));
+}
+
 // Called every frame
 void ADFNBoundingVolume::Tick(float DeltaTime)
 {
@@ -180,7 +188,7 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 			//if true:
 				//create leafnode
 				//go trough leafnode subnodes(rasterize leafnode)
-			if (octD.mortonCodes[0].Contains(GetParentCode(i)))
+			if (CheckIfNodeIsBlocked(layer, i))
 			{
 				//Create a new node
 				//Fill node data
@@ -206,45 +214,36 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 			}
 		}
 	}
-	else if (layer < octD.NumberLayers - 1)
+	else if (layer > 0)
 	{
-		//octD.layers.Emplace();
-		int32 nodeCount = 0;
-
 		for (int32 i = 0; i < nodeAmount; i++)
 		{
 			//If statement to check if this node is within a child node that has morton code(collision)
-			if (octD.mortonCodes[layer].Contains(GetParentCode(i)))
+			if (CheckIfNodeIsBlocked(layer, i))
 			{
+				int32 nodeIndex = octD.layers[layer].Emplace();
 
 				//do the layer caluclations
-				FDFNNode node;
+				FDFNNode& node = octD.layers[layer][nodeIndex];
 				FDFNLink link;
-				int32 childIndex;
+				int32 childIndex = 0;
 				//Parent -> child. Giving parent node its child node
 				node.mortonCode = i;
 
 				//If GetChildNode
-				if (GetIndexFromCode(layer, node.mortonCode << 3, childIndex))
+				if (GetIndexFromCode(layer - 1, node.mortonCode << 3, childIndex))
 				{
-
-
 					link.layer = layer - 1;
 					link.nodeIndex = childIndex;
 					link.subNodeIndex = 0;
 					node.firstChild = link;
 
-					nodeCount++;
-
-
 					//Child -> parent. Go through 8 children and setting there parent link
 					for (int ci = 0; ci < 8; ci++)
 					{
 						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.layer = layer;
-						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.nodeIndex = nodeCount;
+						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.nodeIndex = nodeIndex;
 					}
-
-					octD.layers[layer].Add(node);
 
 					if (world)
 					{
@@ -253,20 +252,6 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 						DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
 					}
 				}
-			}
-		}
-	}
-	else if (layer == octD.NumberLayers - 1)
-	{
-		//Create root node
-
-		if (world)
-		{
-			if (showRootNode && layer == octD.NumberLayers - 1)
-			{
-				FVector position;
-				GetNodePosition(nodeSize, 0, position);
-				DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
 			}
 		}
 	}
