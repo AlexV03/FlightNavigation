@@ -24,6 +24,8 @@ public:
 	bool showRootNode = false;
 	UPROPERTY(EditAnywhere)
 	bool showSubNodes = false;
+	UPROPERTY(EditAnywhere)
+	bool showNeighborLinks = false;
 
 protected:
 	// Called when the game starts or when spawned
@@ -39,14 +41,18 @@ protected:
 	float GetVoxelSize(uint8 layer) const;
 	bool GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const;
 	bool CheckIfNodeIsBlocked(uint8 layer, uint64 mCode);
+	FVector GetFaceDirection(int faceIdx);
+	int32 GetNodeAmountOfSide(uint8 layer);
+	void FindNeighborInParents(uint8 layer, int32 nodeIndex, uint8 faceIndex, uint8& parentLayer, int32& neighborNodeIndex);
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void RasterizeLayer(uint8 layer);
-	void RasterizeLeafNode(FVector& _origin, uint8 layer);
+	void RasterizeLeafNode();
 	void RasterizeFirstLayer();
+	void BuildNeighborLinks(uint8 layer);
 	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
 	void Generate();
 

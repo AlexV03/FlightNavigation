@@ -12,7 +12,7 @@ const TArray<FColor> ADFNBoundingVolume::layerColors = {
 		FColor(60, 180, 75),   // Green
 		FColor(255, 225, 25),  // Yellow
 		FColor(0, 130, 200),   // Blue
-		FColor(245, 130, 48),  // Orange
+		FColor(246, 167, 49),  // Orange
 		FColor(145, 30, 180),  // Purple
 		FColor(70, 240, 240),  // Cyan
 		FColor(240, 50, 230),  // Magenta
@@ -64,7 +64,7 @@ bool ADFNBoundingVolume::GetNodePosition(float nodeSize, uint_fast64_t mCode, FV
 	uint_fast32_t X, Y, Z;
 	morton3D_64_decode(mCode, X, Y, Z);
 	//position = origin - (newVolumeSize * 0.5f) + (FVector(X, Y, Z) * nodeSize) + FVector(nodeSize * 0.5f);
-	position = GetActorLocation() - (newVolumeSize * 0.5f) + (FVector(X, Y, Z) * nodeSize) + FVector(nodeSize * 0.5f);
+	position = origin + (FVector(X, Y, Z) * nodeSize) + FVector(nodeSize * 0.5f);
 
 	return true;
 }
@@ -124,6 +124,91 @@ bool ADFNBoundingVolume::CheckIfNodeIsBlocked(uint8 layer, uint64 mCode)
 	return octD.mortonCodes[layer].Contains(GetParentCode(mCode));
 }
 
+FVector ADFNBoundingVolume::GetFaceDirection(int faceIdx)
+{
+	switch (faceIdx)
+	{
+	case 0: return FVector(1, 0, 0);   // +X
+	case 1: return FVector(-1, 0, 0);  // -X
+	case 2: return FVector(0, 1, 0);   // +Y
+	case 3: return FVector(0, -1, 0);  // -Y
+	case 4: return FVector(0, 0, 1);   // +Z
+	case 5: return FVector(0, 0, -1);  // -Z
+	default: return FVector(0, 0, 0);
+	}
+}
+
+int32 ADFNBoundingVolume::GetNodeAmountOfSide(uint8 layer)
+{
+	return FMath::Pow(2.f, (octD.NumberLayers - (layer)));
+}
+
+void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uint8 faceIndex, uint8& parentLayer, int32& neighborNodeIndex)
+{
+	UWorld* world = GetWorld();
+	FVector originPos;
+	GetNodePosition(GetVoxelSize(layer), octD.layers[layer][nodeIndex].mortonCode, originPos);
+
+	uint8 currentLayer = layer;
+	int32 currentIndex = nodeIndex;
+
+	while (true)
+	{
+		FDFNLink& parentLink = octD.layers[currentLayer][currentIndex].parent;
+
+		//Reached root, set invalid and return
+		if (parentLink.layer == 15)
+		{
+			parentLayer = 15;
+			neighborNodeIndex = 0;
+			return;
+		}
+
+		currentLayer = parentLink.layer;
+		currentIndex = parentLink.nodeIndex;
+
+		uint_fast32_t x, y, z;
+		morton3D_64_decode(octD.layers[currentLayer][currentIndex].mortonCode, x, y, z);
+
+		FVector neighborPosition = FVector(x, y, z) + GetFaceDirection(faceIndex);
+		int32 boundsSideSize = GetNodeAmountOfSide(currentLayer);
+
+		//Check bounds of neighbor
+		if (neighborPosition.X < 0 || neighborPosition.X >= boundsSideSize ||
+			neighborPosition.Y < 0 || neighborPosition.Y >= boundsSideSize ||
+			neighborPosition.Z < 0 || neighborPosition.Z >= boundsSideSize)
+		{//Node is out of bounds, return
+			continue;
+		}
+
+		uint64 neighborMCode = morton3D_64_encode(neighborPosition.X, neighborPosition.Y, neighborPosition.Z);
+
+		int32 foundIndex = 0;
+		if (GetIndexFromCode(currentLayer, neighborMCode, foundIndex))
+		{
+			//Node found, set variables, return
+			parentLayer = currentLayer;
+			neighborNodeIndex = currentIndex;
+
+			//Draw debug line between node and its neighbor. Meaning no direct neighbor
+			if (world && showNeighborLinks)
+			{
+				FVector neighborPos;
+				GetNodePosition(GetVoxelSize(currentLayer), octD.layers[currentLayer][foundIndex].mortonCode, neighborPos);
+
+				//Color = redish
+				DrawDebugLine(world, originPos, neighborPos, FColor(255, 0, 127), true, -1.0f, 0, 2.0f);
+
+				UE_LOG(LogTemp, Warning,
+					TEXT("Neighbor (climbed): orig layer=%d node=%d face=%d -> found layer=%d node=%d"),
+					layer, nodeIndex, faceIndex, currentLayer, foundIndex);
+			}
+
+			return;
+		}
+	}
+}
+
 // Called every frame
 void ADFNBoundingVolume::Tick(float DeltaTime)
 {
@@ -142,57 +227,16 @@ void ADFNBoundingVolume::Tick(float DeltaTime)
 
 void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 {
-	//check if layer 0
-		//if layer 0
-		//forloop through each node in this layer to create the leafnodes
-			//create leaf node
-			//RasterrizeLeafNode(aka, collision checking for the 64 subnodes)
-	//else
-		//forloop through all nodes in this layer
-			//Create node
-			//fill node, firstChild(filled with proper values), parent(filled with proper values), mortoncode
 	UWorld* world = GetWorld();
 	int32 nodeAmount = GetNodeAmountInLayer(layer);
 	float nodeSize = GetVoxelSize(layer);
 
-	/*UE_LOG(LogTemp, Warning, TEXT("!Node amount: %d"), nodeAmount);
-	UE_LOG(LogTemp, Warning, TEXT("!Node size: %f"), nodeSize);
-	UE_LOG(LogTemp, Warning, TEXT("!Current layer: %d"), layer);
-	UE_LOG(LogTemp, Warning, TEXT("!Max layers in oct: %d"), octD.NumberLayers);*/
-
-	//if (layer == 6)
-	//{
-	//	for (int32 i = 0; i < nodeAmount; i++)
-	//	{
-	//		//check if node is in morton code
-	//		//if true:
-	//			//create leafnode
-	//			//go trough leafnode subnodes(rasterize leafnode)
-	//		if (world)
-	//		{
-	//			FVector position;
-	//			GetNodePosition(nodeSize, i, position);
-	//			DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
-	//		}
-	//	}
-	//}
-
 	if (layer == 0)
 	{
-		//Create octD layer 0
-		//octD.layers.Emplace();
-
 		for (int32 i = 0; i < nodeAmount; i++)
 		{
-			//check if node is in morton code
-			//if true:
-				//create leafnode
-				//go trough leafnode subnodes(rasterize leafnode)
 			if (CheckIfNodeIsBlocked(layer, i))
 			{
-				//Create a new node
-				//Fill node data
-				//Add node to layer 0 nodes array.
 				FDFNNode node;
 				FDFNLink link;
 				link.layer = 0;
@@ -201,13 +245,11 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 				node.firstChild = link;
 				node.mortonCode = i;
 
-				//UE_LOG(LogTemp, Warning, TEXT("!Max layers in oct: %d"), nodeAmount);
-				FVector position;
-				GetNodePosition(nodeSize, i, position);
-
-				if (CheckCollisionOverlap(position, ECC_WorldStatic, nodeSize))
+				if (world)
 				{
-					RasterizeLeafNode(position, layer);
+					FVector position;
+					GetNodePosition(nodeSize, i, position);
+					DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
 				}
 
 				octD.layers[0].Add(node);
@@ -245,7 +287,7 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.nodeIndex = nodeIndex;
 					}
 
-					if (world)
+					if (world && showRootNode)
 					{
 						FVector position;
 						GetNodePosition(nodeSize, i, position);
@@ -257,17 +299,47 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 	}
 }
 
-//Step by step.
-//1: make all the nodes, make array with colors for each layer.*
-//2: check for morton code if node has collision.
-//3: add those nodes to the array.
-
-void ADFNBoundingVolume::RasterizeLeafNode(FVector& _origin, uint8 layer)
+void ADFNBoundingVolume::RasterizeLeafNode()
 {
-	//loop through 64 voxels
-	//Check collision
-	//If true: set voxel int bit to 1
-	//If false: set voxel int bit to 0
+	UWorld* world = GetWorld();
+
+	float leafSize = GetVoxelSize(0);
+	int32 leafIndex = 0;
+
+	for (int i = 0; i < octD.leafNodes.Num(); i++)
+	{
+		FDFNNode& node = octD.layers[0][i];
+
+		FVector leafCenter;
+		GetNodePosition(leafSize, node.mortonCode, leafCenter);
+		FVector lOri = leafCenter - FVector(leafSize * 0.5f);
+
+		if (CheckCollisionOverlap(leafCenter, ECC_WorldStatic, leafSize))
+		{
+			//do 64 loop
+			for (int v = 0; v < 64; v++)
+			{
+				uint_fast32_t x, y, z;
+				morton3D_64_decode(v, x, y, z);//Position of node
+				FVector position = lOri + FVector(x * voxelResolution, y * voxelResolution, z * voxelResolution) + FVector(voxelResolution * 0.5f);
+
+				if (CheckCollisionOverlap(position, ECC_WorldStatic, voxelResolution))
+				{
+					//set voxel bit in the 64bit var
+
+					octD.leafNodes[leafIndex].SetVoxelBit(v);
+
+					//Debug render voxel
+					if (world && showSubNodes)
+					{
+						DrawDebugBox(world, position, FVector(voxelResolution * 0.5f), FQuat::Identity, GetColorAt(9), true, -1.0f, 0, 2.0f);
+					}
+				}
+			}
+
+			leafIndex++;
+		}
+	}
 }
 
 //Idea: Box needs to be power of 2, could make it that the bounding box is still the real navmesh bounds. so everything outside the
@@ -321,24 +393,79 @@ void ADFNBoundingVolume::RasterizeFirstLayer()
 		//UE_LOG(LogTemp, Warning, TEXT("My POSITION is: %s"), *position.ToString());
 		if (CheckCollisionOverlap(position, ECC_WorldStatic, nodeSize))
 		{
-			//uint64 mCode = morton3D_64_encode(xi, yi, zi);
-			//uint64 mCode = morton3D_64_encode(position.X, position.Y, position.Z);
-			//uint32_t mCode = morton3D_32_encode(xi, yi, zi);
-			//uint32_t mCode = morton3D_64_encode(xi, yi, zi);
-
-			//octD.mortonCodes.Add(mCode);
 			octD.mortonCodes[0].Add(i);
-			//UE_LOG(LogTemp, Warning, TEXT("My POSITION is: %s"), *position.ToString());
-			//UE_LOG(LogTemp, Warning, TEXT("My codes amount are: %d"), octD.mortonCodes.Num());
-			//if (world)
-			//{
-			//	//DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(1), true, -1.0f, 0, 2.0f);
-			//	DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, FColor::Black, true, -1.0f, 0, 2.0f);
-			//}
 		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("FINAL: My codes amount are: %d"), octD.mortonCodes.Num());
+}
+
+void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
+{
+	UWorld* world = GetWorld();
+
+	TArray<FDFNNode>& nodeLayer = octD.layers[layer];
+
+	for (int i = 0; i < nodeLayer.Num(); i++)
+	{
+		FDFNNode& node = nodeLayer[i];
+
+		uint_fast32_t x, y, z;
+		morton3D_64_decode(node.mortonCode, x, y, z);
+		float nodeSize = GetVoxelSize(layer);
+		FVector nodePosition;
+		GetNodePosition(nodeSize, node.mortonCode, nodePosition);
+
+		//For each direction
+		for (int d = 0; d < 6; d++)
+		{
+			FDFNLink& neighborLink = node.neighbors[d];
+
+			FVector neighborCoords = FVector(x, y, z) + GetFaceDirection(d);
+			int32 layerSize = GetNodeAmountOfSide(layer);
+
+			//If node is outside the bounds
+			if (neighborCoords.X < 0 || neighborCoords.X >= layerSize ||
+				neighborCoords.Y < 0 || neighborCoords.Y >= layerSize ||
+				neighborCoords.Z < 0 || neighborCoords.Z >= layerSize)
+			{
+				neighborLink.layer = 15;
+				continue;
+			}
+
+			uint_fast32_t nx, ny, nz;
+			nx = neighborCoords.X;
+			ny = neighborCoords.Y;
+			nz = neighborCoords.Z;
+			uint64_t neightborMCode = morton3D_64_encode(nx, ny, nz);
+
+			int32 nIndex = 0;
+			if (GetIndexFromCode(layer, neightborMCode, nIndex))
+			{
+				//Found neightbor, set link
+				neighborLink.layer = layer;
+				neighborLink.nodeIndex = nIndex;
+
+				//Draw debug line between direct neighbors
+				if (world && showNeighborLinks)
+				{
+					FVector neighborPos;
+					GetNodePosition(nodeSize, octD.layers[layer][nIndex].mortonCode, neighborPos);
+
+					//Color = prupleish
+					DrawDebugLine(world, nodePosition, neighborPos, FColor(127, 0, 255), true, -1.0f, 0, 2.0f);
+				}
+			}
+			else//No neighbor found
+			{
+				uint8 newLayer = 0;
+				int32 nnIndex = 0;
+				FindNeighborInParents(layer, i, d, newLayer, nnIndex);
+				neighborLink.layer = newLayer;
+				neighborLink.nodeIndex = nnIndex;
+			}
+		}
+	}
 }
 
 bool ADFNBoundingVolume::CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize)
@@ -361,7 +488,7 @@ void ADFNBoundingVolume::Generate()
 	//allocate leafnodes
 	//octD.leafNodes.Empty();
 
-	octD.leafNodes.AddDefaulted(octD.mortonCodes.Num() * 8);
+	octD.leafNodes.AddDefaulted(octD.mortonCodes[0].Num() * 8);
 
 	for (int i = 0; i < octD.NumberLayers; i++)
 	{
@@ -376,9 +503,12 @@ void ADFNBoundingVolume::Generate()
 		RasterizeLayer(i);
 	}
 
+	RasterizeLeafNode();
+
 	for (int i = octD.NumberLayers - 2; i >= 0; i--)
 	{
 		//creating neighbore links(up to down)
+		BuildNeighborLinks(i);
 	}
 }
 
