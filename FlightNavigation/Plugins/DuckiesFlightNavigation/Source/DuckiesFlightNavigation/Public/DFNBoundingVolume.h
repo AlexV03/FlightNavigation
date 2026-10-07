@@ -26,6 +26,8 @@ public:
 	bool showSubNodes = false;
 	UPROPERTY(EditAnywhere)
 	bool showNeighborLinks = false;
+	UPROPERTY(EditAnywhere)
+	bool autoRebuild = false;
 
 protected:
 	// Called when the game starts or when spawned
@@ -54,9 +56,14 @@ public:
 	void RasterizeFirstLayer();
 	void BuildNeighborLinks(uint8 layer);
 	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
+	UFUNCTION(CallInEditor, Category = "Debug")
 	void Generate();
+	UFUNCTION(CallInEditor, Category = "Debug")
+	void ClearVolume();
 
 #if WITH_EDITOR
+	//virtual void PostEditMove(bool bFinished) override;
+	//virtual void PostEditChangeProperty(FPropertyChangedEvent& Event) override;
 	virtual bool ShouldTickIfViewportsOnly() const override { return true; }
 #endif
 

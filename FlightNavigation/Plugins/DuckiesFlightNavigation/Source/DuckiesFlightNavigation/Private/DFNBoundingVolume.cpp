@@ -272,7 +272,6 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 				//Parent -> child. Giving parent node its child node
 				node.mortonCode = i;
 
-				//If GetChildNode
 				if (GetIndexFromCode(layer - 1, node.mortonCode << 3, childIndex))
 				{
 					link.layer = layer - 1;
@@ -476,7 +475,7 @@ bool ADFNBoundingVolume::CheckCollisionOverlap(const FVector& position, ECollisi
 
 void ADFNBoundingVolume::Generate()
 {
-	octD.Reset();//Clear data upon generation
+	ClearVolume();
 
 	//first pass rasterizer.
 	RasterizeFirstLayer();
@@ -511,6 +510,49 @@ void ADFNBoundingVolume::Generate()
 		BuildNeighborLinks(i);
 	}
 }
+
+void ADFNBoundingVolume::ClearVolume()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		FlushPersistentDebugLines(World);
+	}
+
+	octD.Reset();
+}
+
+
+//Too broken to use, sometimes it crashes, then it works but then CTRL + Z doesn't work. Very buggy
+#if WITH_EDITOR
+//void ADFNBoundingVolume::PostEditChangeProperty(FPropertyChangedEvent& Event)
+//{
+//	if (autoRebuild)
+//	{
+//		Super::PostEditChangeProperty(Event);
+//
+//		const FName propertyName = Event.GetPropertyName();
+//
+//		if (propertyName == GET_MEMBER_NAME_CHECKED(ADFNBoundingVolume, voxelResolution) ||
+//			propertyName == GET_MEMBER_NAME_CHECKED(ADFNBoundingVolume, showRootNode) ||
+//			propertyName == GET_MEMBER_NAME_CHECKED(ADFNBoundingVolume, showSubNodes) ||
+//			propertyName == GET_MEMBER_NAME_CHECKED(ADFNBoundingVolume, showNeighborLinks))
+//		{
+//			Generate();
+//		}
+//	}
+//}
+//
+//void ADFNBoundingVolume::PostEditMove(bool bFinished)
+//{
+//	if (autoRebuild)
+//	{
+//		Super::PostEditMove(bFinished);
+//
+//		UE_LOG(LogTemp, Warning, TEXT("POST THAT Moveee"));
+//	}
+//}
+#endif
 
 const FColor& ADFNBoundingVolume::GetColorAt(int32 index) const
 {
