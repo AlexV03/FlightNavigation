@@ -20,10 +20,7 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 	FDFNLink startLink;
 	FDFNLink targetLink;
 
-	if (!boundingVolume.CalculateLinkFromPosition(startPos, startLink))
-	{
-		return;
-	}
+	if (!boundingVolume.CalculateLinkFromPosition(startPos, startLink)) return;
 	if (!boundingVolume.CalculateLinkFromPosition(targetPos, targetLink)) return;
 
 	FDFNPathNode startPathNode;
@@ -55,7 +52,6 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 				bestIdx = i;
 		}
 
-
 		//open.pop
 		FDFNPathNode node = open[bestIdx];
 		open.RemoveAtSwap(bestIdx);
@@ -67,19 +63,15 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 		//check if current link is target link
 		//if (node.nodeLink == targetLink)
 
-		if (node.nodeLink.nodeIndex == targetLink.nodeIndex)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("layersAAAAAAAA.Num()="));
-		}
-		
-		//Skip subnodes for now. TODO: implement way to check if target is inside a subnode to have precies navigation
-		if (node.nodeLink.layer == targetLink.layer && node.nodeLink.nodeIndex == targetLink.nodeIndex)
+		if (node.nodeLink == targetLink)
 		{
 			BuildPath(node.nodeLink);
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("I HAVE BEEN BUILDS!"));
 			return;
 		}
 
-		TArray<FDFNLink> neighbors = boundingVolume.GetNeighborLinks(node.nodeLink);
+		TArray<FDFNLink> neighbors = boundingVolume.GetNeighborLinks(node.nodeLink);//May not return subnode neighbors?
 
 		for (const FDFNLink& neighborLink : neighbors)
 		{
@@ -91,11 +83,12 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 			boundingVolume.CalculatePositionFromLink(node.nodeLink, currentPosition);
 			boundingVolume.CalculatePositionFromLink(neighborLink, neighborPosition);
 
+			//Calculate cost between two nodes based on distance
 			float stepCost = FVector::Dist(currentPosition, neighborPosition);
-
 			float tentativeG = node.gScore + stepCost;
 			float* existingG = GScore.Find(neighborLink);
 
+			//add new node when current node's Gcost is lower than existing Gcost
 			if (!existingG || tentativeG < *existingG)
 			{
 				GScore.Add(neighborLink, tentativeG);
@@ -110,30 +103,32 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 			}
 		}
 
-		//const FDFNNode& currentNode = octD.GetNode(node.nodeLink);
-		//TArray<FDFNLink> neighbors;
-
-		//if layer == 0
-			//loop through the leafneighbors
-			// do the F G H calculations, add them to the proper arrays
-		//else
-			//loop through normal neighbors
-			// do the F G H calculations, add them to the proper arrays
-
-		//if(node.nodeLink.layer == 0 && currentNode.firstChild.layer != 15)
-			//Get leafneighbors
-			//Loop through each neighbor
-			//if closed doesnt contain this neighbor, then calculate F G H, add to proper arrays
-		//else
-			//Get neighbors
-			//Loop through neihbors
-			//if closed doesnt contain this neighbor, then calculate F G H, add to proper arrays
-
-		//increase iteration
-		//iteration++;
-		//if max iterations reached, stop
-		if (++iteration > maxIterations)//Needed?
+		if (++iteration > maxIterations)
 			return;
+	}
+}
+
+void DFNPathFinder::DrawPath()
+{
+	if (!finalPath.IsEmpty())
+	{
+		if (UWorld* world = boundingVolume.GetWorld())
+		{
+			//Draw line between 2 points
+			for (int32 i = 0; i < finalPath.Num() - 1; i++)
+			{
+				DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, false, 0.5f, 0, 4.0f);
+			}
+
+			//Draw spheres for start, goal and inbetween locations
+			for (int32 i = 0; i < finalPath.Num(); i++)
+			{
+				FColor pointColor = (i == 0) ? FColor::Green        // start
+					: (i == finalPath.Num() - 1) ? FColor::Red      // goal
+					: FColor::Yellow;                               // intermediate waypoint
+				DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, false, 0.5f, 0, 2.0f);
+			}
+		}
 	}
 }
 
@@ -177,23 +172,23 @@ void DFNPathFinder::BuildPath(const FDFNLink& targetLink)
 
 	//UE_LOG(LogTemp, Warning, TEXT("layers.Num()=%d"), finalPath.Num());
 
-	if (UWorld* world = boundingVolume.GetWorld())
-	{
-		//Draw line between 2 points
-		for (int32 i = 0; i < finalPath.Num() - 1; i++)
-		{
-			DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, true, -1.0f, 0, 4.0f);
-		}
+	//if (UWorld* world = boundingVolume.GetWorld())
+	//{
+	//	//Draw line between 2 points
+	//	for (int32 i = 0; i < finalPath.Num() - 1; i++)
+	//	{
+	//		DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, true, -1.0f, 0, 4.0f);
+	//	}
 
-		//Draw spheres for start, goal and inbetween locations
-		for (int32 i = 0; i < finalPath.Num(); i++)
-		{
-			FColor pointColor = (i == 0) ? FColor::Green        // start
-				: (i == finalPath.Num() - 1) ? FColor::Red      // goal
-				: FColor::Yellow;                               // intermediate waypoint
-			DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, true, -1.0f, 0, 2.0f);
-		}
-	}
+	//	//Draw spheres for start, goal and inbetween locations
+	//	for (int32 i = 0; i < finalPath.Num(); i++)
+	//	{
+	//		FColor pointColor = (i == 0) ? FColor::Green        // start
+	//			: (i == finalPath.Num() - 1) ? FColor::Red      // goal
+	//			: FColor::Yellow;                               // intermediate waypoint
+	//		DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, true, -1.0f, 0, 2.0f);
+	//	}
+	//}
 }
 
 void DFNPathFinder::Reset()
@@ -203,9 +198,4 @@ void DFNPathFinder::Reset()
 	cameFrom.Empty();
 	GScore.Empty();
 	finalPath.Empty();
-
-	if (UWorld* world = boundingVolume.GetWorld())
-	{
-		FlushPersistentDebugLines(world);
-	}
 }

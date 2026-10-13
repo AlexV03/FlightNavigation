@@ -50,7 +50,9 @@ class DUCKIESFLIGHTNAVIGATION_API DFNPathFinder
 public:
 	DFNPathFinder(const ADFNBoundingVolume& _boundingVolume)
 		: boundingVolume(_boundingVolume) {};
+
 	void FindPath(const FVector& startPos, const FVector& targetPos);
+	void DrawPath();
 
 	//How many times a* can iterate before being terminated
 	int maxIterations = 5000;

@@ -50,6 +50,7 @@ protected:
 	void CollectTraversableLinks(const FDFNLink& link, uint8 faceIndex, TArray<FDFNLink>& outLinks) const;
 	uint8 SubnodeCoordToIndex(uint8 x, uint8 y, uint8 z) const;
 	FIntVector SubnodeIndexToCoord(uint8 subIndex) const;
+	bool IsLeafWithSubnodes(const FDFNLink& link) const;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

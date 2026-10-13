@@ -18,7 +18,7 @@ UDFNNavAgent::UDFNNavAgent()
 
 void UDFNNavAgent::FindPath()
 {
-	pathFinder->FindPath(GetOwner()->GetActorLocation(), FVector(0, 0, 1160));
+	pathFinder->FindPath(GetOwner()->GetActorLocation(), FVector(330, 290, 1010));
 }
 
 // Called when the game starts
@@ -43,6 +43,6 @@ void UDFNNavAgent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	pathFinder->DrawPath();
 }
 
