@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "OctreeData.h"
+
 #include "DFNBoundingVolume.generated.h"
 
 UCLASS()
@@ -44,9 +45,11 @@ protected:
 	bool GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const;
 	bool CheckIfNodeIsBlocked(uint8 layer, uint64 mCode);
 	FVector GetFaceDirection(int faceIdx);
-	int32 GetNodeAmountOfSide(uint8 layer);
+	int32 GetNodeAmountOfSide(uint8 layer) const;
 	void FindNeighborInParents(uint8 layer, int32 nodeIndex, uint8 faceIndex, uint8& parentLayer, int32& neighborNodeIndex);
-
+	void CollectTraversableLinks(const FDFNLink& link, uint8 faceIndex, TArray<FDFNLink>& outLinks) const;
+	uint8 SubnodeCoordToIndex(uint8 x, uint8 y, uint8 z) const;
+	FIntVector SubnodeIndexToCoord(uint8 subIndex) const;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -55,15 +58,20 @@ public:
 	void RasterizeLeafNode();
 	void RasterizeFirstLayer();
 	void BuildNeighborLinks(uint8 layer);
+	TArray<FDFNLink> GetNeighborLinks(const FDFNLink& link) const;
+	bool GetSubnodeNeighbor(const FDFNLink& link, uint8 faceIndex, FDFNLink& outNeighbor) const;
 	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
 	UFUNCTION(CallInEditor, Category = "Debug")
 	void Generate();
 	UFUNCTION(CallInEditor, Category = "Debug")
 	void ClearVolume();
 
+	bool CalculatePositionFromLink(const FDFNLink& link, FVector& position) const;
+	bool CalculateLinkFromPosition(const FVector& position, FDFNLink& link) const;
+
 #if WITH_EDITOR
-	//virtual void PostEditMove(bool bFinished) override;
-	//virtual void PostEditChangeProperty(FPropertyChangedEvent& Event) override;
+	virtual void PostEditMove(bool bFinished) override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& Event) override;
 	virtual bool ShouldTickIfViewportsOnly() const override { return true; }
 #endif
 

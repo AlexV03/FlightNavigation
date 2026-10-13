@@ -14,6 +14,11 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLeafNode
 	inline bool isFullyBlocked() const { return voxel == 0xFFFFFFFFFFFFFFFFull; }
 	inline bool isOccupied() const { return voxel != 0; }
 
+	inline bool IsSubnodeSolid(uint8 subIndex) const
+	{
+		return (voxel & (1ull << subIndex)) != 0;
+	}
+
 	//Set specific bit to index
 	void SetVoxelBit(uint8 index)
 	{

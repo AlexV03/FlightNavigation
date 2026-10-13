@@ -15,9 +15,6 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNOctreeData
 
 	TArray<TArray<FDFNNode>> layers;
 	TArray<FDFNLeafNode> leafNodes;
-
-	//TArray<TSet<uint64_t>> mortonCodes; //Used during the first rasterize pass
-	//TArray<uint32_t> mortonCodes; //Storing voxels that have collision
 	TArray<TSet<uint64>> mortonCodes; //Storing voxels that have collision
 
 	uint8 NumberLayers = 0;
@@ -28,7 +25,5 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNOctreeData
 		leafNodes.Empty();
 		mortonCodes.Empty();
 	}
-
-	//int32 GetNodeAmountInLayer()
 };
 

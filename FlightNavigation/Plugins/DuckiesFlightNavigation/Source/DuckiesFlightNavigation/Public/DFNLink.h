@@ -16,6 +16,10 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 	FDFNLink() :
 		layer(15), nodeIndex(0), subNodeIndex(0) {}
 
+	bool operator==(const FDFNLink& other) const
+	{
+		return layer == other.layer && nodeIndex == other.nodeIndex && subNodeIndex == other.subNodeIndex;
+	}
 	//GetLayer()
 	//GetNodeIndex()
 	//GetSubnodeIndex()
@@ -24,4 +28,9 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 	//CoordToSubnode()
 };
 
+
+FORCEINLINE uint32 GetTypeHash(const FDFNLink& link)
+{
+	return HashCombine(HashCombine(GetTypeHash(link.layer), GetTypeHash(link.nodeIndex)), GetTypeHash(link.subNodeIndex));
+}
 
