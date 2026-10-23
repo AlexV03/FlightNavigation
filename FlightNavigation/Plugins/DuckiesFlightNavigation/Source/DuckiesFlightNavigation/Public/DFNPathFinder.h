@@ -51,11 +51,12 @@ public:
 	DFNPathFinder(const ADFNBoundingVolume& _boundingVolume)
 		: boundingVolume(_boundingVolume) {};
 
-	void FindPath(const FVector& startPos, const FVector& targetPos);
+	bool FindPath(const FVector& startPos, const FVector& targetPos);
+	const TArray<FVector>& GetPath() const { return finalPath; }
 	void DrawPath();
 
 	//How many times a* can iterate before being terminated
-	int maxIterations = 5000;
+	int maxIterations = 50000;
 private:
 	//Store nodes to visit
 	TArray<FDFNPathNode> open;

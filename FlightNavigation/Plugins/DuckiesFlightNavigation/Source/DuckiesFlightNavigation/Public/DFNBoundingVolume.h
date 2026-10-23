@@ -70,6 +70,11 @@ public:
 	bool CalculatePositionFromLink(const FDFNLink& link, FVector& position) const;
 	bool CalculateLinkFromPosition(const FVector& position, FDFNLink& link) const;
 
+	bool IsGenerated() const { return octD.NumberLayers > 0 && octD.layers.Num() == octD.NumberLayers; }
+	//uint32 GetGenerationId() const { return bvgId; }
+
+	bool IsInsideNavVolume(const FVector& _position) const;
+
 #if WITH_EDITOR
 	virtual void PostEditMove(bool bFinished) override;
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& Event) override;
@@ -80,6 +85,8 @@ private:
 	int32 newVolumeSize = 0;
 	FVector origin;
 	static const TArray<FColor> layerColors;
+
+	//uint32 bvgId = 0;
 
 	const FColor& GetColorAt(int32 index) const;
 	void CreateLayerMortonCodes();

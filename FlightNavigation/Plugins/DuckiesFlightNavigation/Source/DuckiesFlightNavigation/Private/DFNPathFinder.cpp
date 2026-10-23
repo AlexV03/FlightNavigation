@@ -4,7 +4,7 @@
 #include "Algo/Reverse.h"
 #include "DrawDebugHelpers.h"
 
-void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
+bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 {
 	//Clear the data
 	Reset();
@@ -20,8 +20,8 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 	FDFNLink startLink;
 	FDFNLink targetLink;
 
-	if (!boundingVolume.CalculateLinkFromPosition(startPos, startLink)) return;
-	if (!boundingVolume.CalculateLinkFromPosition(targetPos, targetLink)) return;
+	if (!boundingVolume.CalculateLinkFromPosition(startPos, startLink)) return false;
+	if (!boundingVolume.CalculateLinkFromPosition(targetPos, targetLink)) return false;
 
 	FDFNPathNode startPathNode;
 	//FDFNPathNode targetPathNode;
@@ -68,7 +68,7 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 			BuildPath(node.nodeLink);
 			if (GEngine)
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("I HAVE BEEN BUILDS!"));
-			return;
+			return true;
 		}
 
 		TArray<FDFNLink> neighbors = boundingVolume.GetNeighborLinks(node.nodeLink);//May not return subnode neighbors?
@@ -104,8 +104,10 @@ void DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 		}
 
 		if (++iteration > maxIterations)
-			return;
+			return false;
 	}
+
+	return false;
 }
 
 void DFNPathFinder::DrawPath()
@@ -117,7 +119,7 @@ void DFNPathFinder::DrawPath()
 			//Draw line between 2 points
 			for (int32 i = 0; i < finalPath.Num() - 1; i++)
 			{
-				DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, false, 0.5f, 0, 4.0f);
+				DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, false, -1.0f, 0, 4.0f);
 			}
 
 			//Draw spheres for start, goal and inbetween locations
@@ -126,7 +128,7 @@ void DFNPathFinder::DrawPath()
 				FColor pointColor = (i == 0) ? FColor::Green        // start
 					: (i == finalPath.Num() - 1) ? FColor::Red      // goal
 					: FColor::Yellow;                               // intermediate waypoint
-				DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, false, 0.5f, 0, 2.0f);
+				DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, false, -1.0f, 0, 2.0f);
 			}
 		}
 	}

@@ -877,6 +877,11 @@ void ADFNBoundingVolume::PostEditChangeProperty(FPropertyChangedEvent& Event)
 	}
 }
 
+bool ADFNBoundingVolume::IsInsideNavVolume(const FVector& _position) const
+{
+	return FBox::BuildAABB(GetActorLocation(), FVector(newVolumeSize) * 0.5f).IsInsideOrOn(_position);
+}
+
 void ADFNBoundingVolume::PostEditMove(bool bFinished)
 {
 	if (autoRebuild)

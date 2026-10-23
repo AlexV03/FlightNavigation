@@ -24,6 +24,7 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNOctreeData
 		layers.Empty();
 		leafNodes.Empty();
 		mortonCodes.Empty();
+		NumberLayers = 0;
 	}
 };
 
