@@ -44,7 +44,7 @@ void UDFNNavAgent::FindPath()
 
 	const FVector actorPos = owningActor->GetActorLocation();
 
-	if (!pathFinder->FindPath(actorPos, destination))
+	if (!pathFinder->FindPath(actorPos, destination, agentSize))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("DFNNavAgent: no path to %s"), *destination.ToString());
 		FinishMove();
@@ -121,18 +121,14 @@ void UDFNNavAgent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		return;
 	}
 
-
-	//To change: works only in editor
-	/*if (drawPath)
+	if (drawPath)
 	{
-		if (pathFound)
-		{
+		if (followPath.Num() > 0)
 			pathFinder->DrawPath();
-		}
 		else
 			DrawDebugLine(GetWorld(), currentActor->GetActorLocation(), destination,
 				FColor::Red, false, -1.0f, 0, 2.0f);
-	}*/
+	}
 }
 
 //Everything should be inplace now and working.
@@ -252,7 +248,7 @@ void UDFNNavAgent::FollowPath(float deltaTime)
 			remaining = 0.0f;
 		}
 	}
-	
+
 	const FVector moveDelta = currentLocation - oldLocation;
 	if (moveDelta.IsNearlyZero())
 		return;

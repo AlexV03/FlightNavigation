@@ -51,7 +51,7 @@ public:
 	DFNPathFinder(const ADFNBoundingVolume& _boundingVolume)
 		: boundingVolume(_boundingVolume) {};
 
-	bool FindPath(const FVector& startPos, const FVector& targetPos);
+	bool FindPath(const FVector& startPos, const FVector& targetPos, const float agentSize);
 	const TArray<FVector>& GetPath() const { return finalPath; }
 	void DrawPath();
 
@@ -73,13 +73,16 @@ private:
 	//Netx node Gcost + H next node
 	//TMap<FDFNPathNode, float> FScore;
 
+	FVector agentPos;
+
 	//Store currentLink, startLink, goalLink?? maybe instead of link a FDFNPathNode?
 
 	//Distance between nextNode and targetGoal
 	float CalculateHeuristic(const FDFNLink& fromLink, const FDFNLink& targetLink);
 	//float CalculateCost(const FDFNPathNode& startNode, const FDFNPathNode& targetNode);
-	void BuildPath(const FDFNLink& targetLink);
+	void BuildPath(const FDFNLink& targetLink, const float agentSize);
 	void Reset();
+	bool HasLineOfSight(const FVector& fromPos, const FVector& toPos, const float agentSize);
 
 	//The octree
 	//const FDFNOctreeData& octD;

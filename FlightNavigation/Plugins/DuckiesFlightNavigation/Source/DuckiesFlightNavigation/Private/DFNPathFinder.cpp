@@ -3,8 +3,9 @@
 #include "DFNPathFinder.h"
 #include "Algo/Reverse.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/KismetSystemLibrary.h"
 
-bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
+bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos, const float agentSize)
 {
 	//Clear the data
 	Reset();
@@ -16,6 +17,9 @@ bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 	//Calculate targetLink from position
 	//FDFNLink targetLink;
 	//boundingVolume.CalculateLinkFromPosition(startPos, targetLink)
+
+	//Store agent position to use later for Line of sight check
+	agentPos = startPos;
 
 	FDFNLink startLink;
 	FDFNLink targetLink;
@@ -65,7 +69,7 @@ bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos)
 
 		if (node.nodeLink == targetLink)
 		{
-			BuildPath(node.nodeLink);
+			BuildPath(node.nodeLink, agentSize);
 			if (GEngine)
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("I HAVE BEEN BUILDS!"));
 			return true;
@@ -146,7 +150,7 @@ float DFNPathFinder::CalculateHeuristic(const FDFNLink& fromLink, const FDFNLink
 	return (startPos - targetPos).Size();
 }
 
-void DFNPathFinder::BuildPath(const FDFNLink& targetLink)
+void DFNPathFinder::BuildPath(const FDFNLink& targetLink, const float agentSize)
 {
 	TArray<FDFNLink> path;
 
@@ -165,32 +169,36 @@ void DFNPathFinder::BuildPath(const FDFNLink& targetLink)
 	Algo::Reverse(path);
 
 	//Convert links to position
-	for (const FDFNLink& link : path)
+	//for (const FDFNLink& link : path)
+	//{
+	//	FVector pos;
+
+	//	boundingVolume.CalculatePositionFromLink(link, pos);
+	//	finalPath.Add(pos);
+	//}
+
+
+
+
+	FVector lastNode = agentPos;
+	FVector pos;
+
+	for (int32 i = 1; i < path.Num(); i++)
 	{
-		FVector pos;
-		boundingVolume.CalculatePositionFromLink(link, pos);
-		finalPath.Add(pos);
+		boundingVolume.CalculatePositionFromLink(path[i], pos);
+		if (HasLineOfSight(lastNode, pos, agentSize))
+		{
+			boundingVolume.CalculatePositionFromLink(path[i - 1], pos);
+			lastNode = pos;
+			finalPath.Add(lastNode);
+		}
 	}
 
-	//UE_LOG(LogTemp, Warning, TEXT("layers.Num()=%d"), finalPath.Num());
-
-	//if (UWorld* world = boundingVolume.GetWorld())
-	//{
-	//	//Draw line between 2 points
-	//	for (int32 i = 0; i < finalPath.Num() - 1; i++)
-	//	{
-	//		DrawDebugLine(world, finalPath[i], finalPath[i + 1], FColor::Cyan, true, -1.0f, 0, 4.0f);
-	//	}
-
-	//	//Draw spheres for start, goal and inbetween locations
-	//	for (int32 i = 0; i < finalPath.Num(); i++)
-	//	{
-	//		FColor pointColor = (i == 0) ? FColor::Green        // start
-	//			: (i == finalPath.Num() - 1) ? FColor::Red      // goal
-	//			: FColor::Yellow;                               // intermediate waypoint
-	//		DrawDebugSphere(world, finalPath[i], 15.0f, 8, pointColor, true, -1.0f, 0, 2.0f);
-	//	}
-	//}
+	if (!path.IsEmpty())
+	{
+		boundingVolume.CalculatePositionFromLink(path.Last(), pos);
+		finalPath.Add(pos);
+	}
 }
 
 void DFNPathFinder::Reset()
@@ -200,4 +208,15 @@ void DFNPathFinder::Reset()
 	cameFrom.Empty();
 	GScore.Empty();
 	finalPath.Empty();
+}
+
+bool DFNPathFinder::HasLineOfSight(const FVector& fromPos, const FVector& toPos, const float agentSize)
+{
+	FHitResult Hit;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingle(
+		boundingVolume.GetWorld(), fromPos, toPos, agentSize,
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, {},
+		EDrawDebugTrace::None, Hit, true);
+
+	return bHit;
 }
