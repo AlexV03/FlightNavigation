@@ -5,47 +5,32 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos, const float agentSize)
+bool DFNPathFinder::FindPath(const FVector& _startPos, const FVector& _targetPos, const float _agentSize)
 {
 	//Clear the data
 	Reset();
 
-	//Calculate startLink from position
-	//FDFNLink startLink;
-	//boundingVolume.CalculateLinkFromPosition(startPos, startLink)
-
-	//Calculate targetLink from position
-	//FDFNLink targetLink;
-	//boundingVolume.CalculateLinkFromPosition(startPos, targetLink)
-
 	//Store agent position to use later for Line of sight check
-	agentPos = startPos;
+	agentPos = _startPos;
 
 	FDFNLink startLink;
 	FDFNLink targetLink;
 
-	if (!boundingVolume.CalculateLinkFromPosition(startPos, startLink)) return false;
-	if (!boundingVolume.CalculateLinkFromPosition(targetPos, targetLink)) return false;
+	if (!boundingVolume.CalculateLinkFromPosition(_startPos, startLink)) return false;
+	if (!boundingVolume.CalculateLinkFromPosition(_targetPos, targetLink)) return false;
 
 	FDFNPathNode startPathNode;
-	//FDFNPathNode targetPathNode;
 
-	//Set startPathNode.nodeLink
-	//Set targetPathNode.nodeLink
 	startPathNode.nodeLink = startLink;
 	startPathNode.gScore = 0.0f;
 	startPathNode.fScore = CalculateHeuristic(startLink, targetLink);
 
 	int iteration = 0;
 
-	//Add node to each array
 	open.Add(startPathNode);
-	//openLookUp.Add(startPathNode);
-	//cameFrom.Add(startPathNode, startPathNode);
 	GScore.Add(startLink, 0.0f);
-	//FScore.Add(startPathNode, CalculateHeuristic(startPathNode, targetPathNode));
 
-	//while openheap has more than 0 elements
+	//while open has more than 0 elements
 	while (!open.IsEmpty())
 	{
 		//Loop through all open nodes to find node with lowest f score
@@ -56,26 +41,25 @@ bool DFNPathFinder::FindPath(const FVector& startPos, const FVector& targetPos, 
 				bestIdx = i;
 		}
 
-		//open.pop
+		//pop open
 		FDFNPathNode node = open[bestIdx];
 		open.RemoveAtSwap(bestIdx);
 
 		if (closed.Contains(node.nodeLink))
 			continue;
-		//Add node to closedlist
+
 		closed.Add(node.nodeLink);
-		//check if current link is target link
-		//if (node.nodeLink == targetLink)
 
 		if (node.nodeLink == targetLink)
 		{
-			BuildPath(node.nodeLink, agentSize);
+			BuildPath(node.nodeLink, _agentSize);
 			if (GEngine)
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("I HAVE BEEN BUILDS!"));
+
 			return true;
 		}
 
-		TArray<FDFNLink> neighbors = boundingVolume.GetNeighborLinks(node.nodeLink);//May not return subnode neighbors?
+		TArray<FDFNLink> neighbors = boundingVolume.GetNeighborLinks(node.nodeLink);
 
 		for (const FDFNLink& neighborLink : neighbors)
 		{
@@ -138,24 +122,24 @@ void DFNPathFinder::DrawPath()
 	}
 }
 
-float DFNPathFinder::CalculateHeuristic(const FDFNLink& fromLink, const FDFNLink& targetLink)
+float DFNPathFinder::CalculateHeuristic(const FDFNLink& _fromLink, const FDFNLink& _targetLink)
 {
 	FVector startPos;
 	FVector targetPos;
 
-	boundingVolume.CalculatePositionFromLink(fromLink, startPos);
-	boundingVolume.CalculatePositionFromLink(targetLink, targetPos);
+	boundingVolume.CalculatePositionFromLink(_fromLink, startPos);
+	boundingVolume.CalculatePositionFromLink(_targetLink, targetPos);
 
 	//Euclidian distance
 	return (startPos - targetPos).Size();
 }
 
-void DFNPathFinder::BuildPath(const FDFNLink& targetLink, const float agentSize)
+void DFNPathFinder::BuildPath(const FDFNLink& _targetLink, const float _agentSize)
 {
 	TArray<FDFNLink> path;
 
 	//Add target link to path
-	FDFNLink current = targetLink;
+	FDFNLink current = _targetLink;
 	path.Add(current);
 
 	//Walk back through cameFrom until fully walked through
@@ -168,25 +152,15 @@ void DFNPathFinder::BuildPath(const FDFNLink& targetLink, const float agentSize)
 	//Flip the path so it becomes goal -> ... -> target
 	Algo::Reverse(path);
 
-	//Convert links to position
-	//for (const FDFNLink& link : path)
-	//{
-	//	FVector pos;
-
-	//	boundingVolume.CalculatePositionFromLink(link, pos);
-	//	finalPath.Add(pos);
-	//}
-
-
-
-
 	FVector lastNode = agentPos;
 	FVector pos;
 
+	//Pathnode pruning
+	//Loop through the path and do line-of-sight check
 	for (int32 i = 1; i < path.Num(); i++)
 	{
 		boundingVolume.CalculatePositionFromLink(path[i], pos);
-		if (HasLineOfSight(lastNode, pos, agentSize))
+		if (HasLineOfSight(lastNode, pos, _agentSize))
 		{
 			boundingVolume.CalculatePositionFromLink(path[i - 1], pos);
 			lastNode = pos;
@@ -210,11 +184,11 @@ void DFNPathFinder::Reset()
 	finalPath.Empty();
 }
 
-bool DFNPathFinder::HasLineOfSight(const FVector& fromPos, const FVector& toPos, const float agentSize)
+bool DFNPathFinder::HasLineOfSight(const FVector& _fromPos, const FVector& _toPos, const float _agentSize)
 {
 	FHitResult Hit;
 	bool bHit = UKismetSystemLibrary::SphereTraceSingle(
-		boundingVolume.GetWorld(), fromPos, toPos, agentSize,
+		boundingVolume.GetWorld(), _fromPos, _toPos, _agentSize,
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, {},
 		EDrawDebugTrace::None, Hit, true);
 

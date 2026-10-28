@@ -42,11 +42,11 @@ void ADFNBoundingVolume::BeginPlay()
 
 //Formula found in the link below.
 //https://stackoverflow.com/questions/1322510/given-an-integer-how-do-i-find-the-next-largest-power-of-two-using-bit-twiddlin/1322548#1322548
-unsigned int ADFNBoundingVolume::RoundUp2Pow2(unsigned int value)
+unsigned int ADFNBoundingVolume::RoundUp2Pow2(unsigned int _value)
 {
 	unsigned int v;
 
-	v = value;
+	v = _value;
 
 	v--;
 	v |= v >> 1;
@@ -59,39 +59,38 @@ unsigned int ADFNBoundingVolume::RoundUp2Pow2(unsigned int value)
 	return v;
 }
 
-bool ADFNBoundingVolume::GetNodePosition(float nodeSize, uint_fast64_t mCode, FVector& position) const
+bool ADFNBoundingVolume::GetNodePosition(float _nodeSize, uint_fast64_t _mCode, FVector& _position) const
 {
 	uint_fast32_t X, Y, Z;
-	morton3D_64_decode(mCode, X, Y, Z);
-	//position = origin - (newVolumeSize * 0.5f) + (FVector(X, Y, Z) * nodeSize) + FVector(nodeSize * 0.5f);
-	position = origin + (FVector(X, Y, Z) * nodeSize) + FVector(nodeSize * 0.5f);
+	morton3D_64_decode(_mCode, X, Y, Z);
+	_position = origin + (FVector(X, Y, Z) * _nodeSize) + FVector(_nodeSize * 0.5f);
 
 	return true;
 }
 
-uint64 ADFNBoundingVolume::GetParentCode(uint64 childCode)
+uint64 ADFNBoundingVolume::GetParentCode(uint64 _childCode)
 {
-	return childCode >> 3;
+	return _childCode >> 3;
 }
 
-uint64 ADFNBoundingVolume::GetChildCode(uint64 parentCode, unsigned int index)
+uint64 ADFNBoundingVolume::GetChildCode(uint64 _parentCode, unsigned int _index)
 {
-	return (parentCode << 3) | index;
+	return (_parentCode << 3) | _index;
 }
 
-int32 ADFNBoundingVolume::GetNodeAmountInLayer(uint8 layer) const
+int32 ADFNBoundingVolume::GetNodeAmountInLayer(uint8 _layer) const
 {
-	return FMath::Pow(FMath::Pow(2.0f, ((octD.NumberLayers - 1) - layer)), 3);
+	return FMath::Pow(FMath::Pow(2.0f, ((octD.NumberLayers - 1) - _layer)), 3);
 }
 
-float ADFNBoundingVolume::GetVoxelSize(uint8 layer) const
+float ADFNBoundingVolume::GetVoxelSize(uint8 _layer) const
 {
-	return ((newVolumeSize * 0.5) / FMath::Pow(2.f, (octD.NumberLayers - 1))) * (FMath::Pow(2.0f, layer + 1));
+	return ((newVolumeSize * 0.5) / FMath::Pow(2.f, (octD.NumberLayers - 1))) * (FMath::Pow(2.0f, _layer + 1));
 }
 
-bool ADFNBoundingVolume::GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const
+bool ADFNBoundingVolume::GetIndexFromCode(uint8 _layer, uint64 _mCode, int32& _cIndex) const
 {
-	const TArray<FDFNNode>& nLayer = octD.layers[layer];
+	const TArray<FDFNNode>& nLayer = octD.layers[_layer];
 
 	int low = 0;
 	int high = nLayer.Num() - 1;
@@ -101,13 +100,13 @@ bool ADFNBoundingVolume::GetIndexFromCode(uint8 layer, uint64 mCode, int32& cInd
 		int mid = low + (high - low) / 2;
 		uint64 midCode = nLayer[mid].mortonCode;
 
-		if (midCode == mCode)
+		if (midCode == _mCode)
 		{
-			cIndex = mid;
+			_cIndex = mid;
 			return true;
 		}
 
-		if (midCode < mCode)
+		if (midCode < _mCode)
 			low = mid + 1;
 		else
 			high = mid - 1;
@@ -116,20 +115,20 @@ bool ADFNBoundingVolume::GetIndexFromCode(uint8 layer, uint64 mCode, int32& cInd
 	return false;
 }
 
-bool ADFNBoundingVolume::CheckIfNodeIsBlocked(uint8 layer, uint64 mCode)
+bool ADFNBoundingVolume::CheckIfNodeIsBlocked(uint8 _layer, uint64 _mCode)
 {
-	if (layer == octD.mortonCodes.Num())
+	if (_layer == octD.mortonCodes.Num())
 		return true;
 
-	if (!octD.mortonCodes.IsValidIndex(layer))
+	if (!octD.mortonCodes.IsValidIndex(_layer))
 		return false;
 
-	return octD.mortonCodes[layer].Contains(GetParentCode(mCode));
+	return octD.mortonCodes[_layer].Contains(GetParentCode(_mCode));
 }
 
-FVector ADFNBoundingVolume::GetFaceDirection(int faceIdx)
+FVector ADFNBoundingVolume::GetFaceDirection(int _faceIdx)
 {
-	switch (faceIdx)
+	switch (_faceIdx)
 	{
 	case 0: return FVector(1, 0, 0);   // +X
 	case 1: return FVector(-1, 0, 0);  // -X
@@ -141,19 +140,19 @@ FVector ADFNBoundingVolume::GetFaceDirection(int faceIdx)
 	}
 }
 
-int32 ADFNBoundingVolume::GetNodeAmountOfSide(uint8 layer) const
+int32 ADFNBoundingVolume::GetNodeAmountOfSide(uint8 _layer) const
 {
-	return FMath::Pow(2.f, (octD.NumberLayers - (layer)));
+	return FMath::Pow(2.f, (octD.NumberLayers - (_layer)));
 }
 
-void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uint8 faceIndex, uint8& parentLayer, int32& neighborNodeIndex)
+void ADFNBoundingVolume::FindNeighborInParents(uint8 _layer, int32 _nodeIndex, uint8 _faceIndex, uint8& _parentLayer, int32& _neighborNodeIndex)
 {
 	UWorld* world = GetWorld();
 	FVector originPos;
-	GetNodePosition(GetVoxelSize(layer), octD.layers[layer][nodeIndex].mortonCode, originPos);
+	GetNodePosition(GetVoxelSize(_layer), octD.layers[_layer][_nodeIndex].mortonCode, originPos);
 
-	uint8 currentLayer = layer;
-	int32 currentIndex = nodeIndex;
+	uint8 currentLayer = _layer;
+	int32 currentIndex = _nodeIndex;
 
 	while (true)
 	{
@@ -162,8 +161,8 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 		//Reached root, set invalid and return
 		if (parentLink.layer == 15)
 		{
-			parentLayer = 15;
-			neighborNodeIndex = 0;
+			_parentLayer = 15;
+			_neighborNodeIndex = 0;
 			return;
 		}
 
@@ -173,7 +172,7 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 		uint_fast32_t x, y, z;
 		morton3D_64_decode(octD.layers[currentLayer][currentIndex].mortonCode, x, y, z);
 
-		FVector neighborPosition = FVector(x, y, z) + GetFaceDirection(faceIndex);
+		FVector neighborPosition = FVector(x, y, z) + GetFaceDirection(_faceIndex);
 		int32 boundsSideSize = GetNodeAmountOfSide(currentLayer);
 
 		//Check bounds of neighbor
@@ -181,8 +180,7 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 			neighborPosition.Y < 0 || neighborPosition.Y >= boundsSideSize ||
 			neighborPosition.Z < 0 || neighborPosition.Z >= boundsSideSize)
 		{//Node is out of bounds, return
-			//continue;
-			parentLayer = 15;
+			_parentLayer = 15;
 			return;
 		}
 
@@ -192,9 +190,8 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 		if (GetIndexFromCode(currentLayer, neighborMCode, foundIndex))
 		{
 			//Node found, set variables, return
-			parentLayer = currentLayer;
-			//neighborNodeIndex = currentIndex;
-			neighborNodeIndex = foundIndex;
+			_parentLayer = currentLayer;
+			_neighborNodeIndex = foundIndex;
 
 			//Draw debug line between node and its neighbor. Meaning no direct neighbor
 			if (world && showNeighborLinks)
@@ -207,7 +204,7 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 
 				UE_LOG(LogTemp, Warning,
 					TEXT("Neighbor (climbed): orig layer=%d node=%d face=%d -> found layer=%d node=%d"),
-					layer, nodeIndex, faceIndex, currentLayer, foundIndex);
+					_layer, _nodeIndex, _faceIndex, currentLayer, foundIndex);
 			}
 
 			return;
@@ -215,15 +212,15 @@ void ADFNBoundingVolume::FindNeighborInParents(uint8 layer, int32 nodeIndex, uin
 	}
 }
 
-void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& link, uint8 faceIndex, TArray<FDFNLink>& outLinks) const
+void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& _link, uint8 _faceIndex, TArray<FDFNLink>& _outLinks) const
 {
-	const FDFNNode& node = octD.layers[link.layer][link.nodeIndex];
+	const FDFNNode& node = octD.layers[_link.layer][_link.nodeIndex];
 
-	if (link.layer == 0)
+	if (_link.layer == 0)
 	{
 		if (node.firstChild.layer == 15)
 		{
-			outLinks.Add(link);
+			_outLinks.Add(_link);
 			return;
 		}
 
@@ -234,14 +231,14 @@ void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& link, uint8 fac
 
 		if (leaf.isEmpty())//If empty add empty leaf
 		{
-			FDFNLink newLeaf = link;
+			FDFNLink newLeaf = _link;
 			newLeaf.subNodeIndex = 0;
-			outLinks.Add(newLeaf);
+			_outLinks.Add(newLeaf);
 			return;
 		}
 
-		uint8 axis = faceIndex / 2;
-		bool enterFromSide = (faceIndex % 2) == 0;
+		uint8 axis = _faceIndex / 2;
+		bool enterFromSide = (_faceIndex % 2) == 0;
 		uint8 fixedCoord = enterFromSide ? 0 : 3;
 
 		for (uint8 a = 0; a < 4; a++)
@@ -255,9 +252,9 @@ void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& link, uint8 fac
 				uint8 subIdx = SubnodeCoordToIndex(coord.X, coord.Y, coord.Z);
 				if (!leaf.IsSubnodeSolid(subIdx))
 				{
-					FDFNLink entry = link;
+					FDFNLink entry = _link;
 					entry.subNodeIndex = subIdx;
-					outLinks.Add(entry);
+					_outLinks.Add(entry);
 				}
 			}
 		}
@@ -268,13 +265,13 @@ void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& link, uint8 fac
 	if (node.firstChild.layer == 15)
 	{
 		//No childs, add to link and return
-		outLinks.Add(link);
+		_outLinks.Add(_link);
 		return;
 	}
 
 	// Subdivided — descend into whichever of the 8 children actually touch this face
-	uint8 axis = faceIndex / 2;
-	bool wantNearSide = (faceIndex % 2) == 0;
+	uint8 axis = _faceIndex / 2;
+	bool wantNearSide = (_faceIndex % 2) == 0;
 
 	for (uint8 childOctant = 0; childOctant < 8; childOctant++)
 	{
@@ -284,31 +281,29 @@ void ADFNBoundingVolume::CollectTraversableLinks(const FDFNLink& link, uint8 fac
 			FDFNLink childLink;
 			childLink.layer = node.firstChild.layer;
 			childLink.nodeIndex = node.firstChild.nodeIndex + childOctant;
-			CollectTraversableLinks(childLink, faceIndex, outLinks);   // recurse — child could itself be subdivided
+			CollectTraversableLinks(childLink, _faceIndex, _outLinks);   // recurse — child could itself be subdivided
 		}
 	}
 }
 
-uint8 ADFNBoundingVolume::SubnodeCoordToIndex(uint8 x, uint8 y, uint8 z) const
+uint8 ADFNBoundingVolume::SubnodeCoordToIndex(uint8 _x, uint8 _y, uint8 _z) const
 {
-	//return (x & 0x3) | ((y & 0x3) << 2) | ((z & 0x3) << 4);
-	return static_cast<uint8>(morton3D_64_encode(x, y, z));
+	return static_cast<uint8>(morton3D_64_encode(_x, _y, _z));
 }
 
-FIntVector ADFNBoundingVolume::SubnodeIndexToCoord(uint8 subIndex) const
+FIntVector ADFNBoundingVolume::SubnodeIndexToCoord(uint8 _subIndex) const
 {
-	//return FIntVector(subIndex & 0x3, (subIndex >> 2) & 0x3, (subIndex >> 4) & 0x3);
 	uint_fast32_t x, y, z;
-	morton3D_64_decode(subIndex, x, y, z);
+	morton3D_64_decode(_subIndex, x, y, z);
 	return FIntVector(x, y, z);
 }
 
-bool ADFNBoundingVolume::IsLeafWithSubnodes(const FDFNLink& link) const
+bool ADFNBoundingVolume::IsLeafWithSubnodes(const FDFNLink& _link) const
 {
 	//if not leaf node
-	if (link.layer != 0) return false;
+	if (_link.layer != 0) return false;
 	//if node is not invalid and not empty
-	const FDFNNode& node = octD.layers[0][link.nodeIndex];
+	const FDFNNode& node = octD.layers[0][_link.nodeIndex];
 	return node.firstChild.layer != 15 && !octD.leafNodes[node.firstChild.nodeIndex].isEmpty();
 }
 
@@ -328,19 +323,19 @@ void ADFNBoundingVolume::Tick(float DeltaTime)
 #endif
 }
 
-void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
+void ADFNBoundingVolume::RasterizeLayer(uint8 _layer)
 {
 	UWorld* world = GetWorld();
-	int32 nodeAmount = GetNodeAmountInLayer(layer);
-	float nodeSize = GetVoxelSize(layer);
+	int32 nodeAmount = GetNodeAmountInLayer(_layer);
+	float nodeSize = GetVoxelSize(_layer);
 
-	if (layer == 0)
+	if (_layer == 0)
 	{
 		int32 leafIndex = 0;
 
 		for (int32 i = 0; i < nodeAmount; i++)
 		{
-			if (CheckIfNodeIsBlocked(layer, i))
+			if (CheckIfNodeIsBlocked(_layer, i))
 			{
 				FDFNNode node;
 				FDFNLink link;
@@ -354,7 +349,7 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 				{
 					FVector position;
 					GetNodePosition(nodeSize, i, position);
-					DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
+					DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(_layer), true, -1.0f, _layer, 2.0f);
 				}
 
 				octD.layers[0].Add(node);
@@ -362,25 +357,25 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 			}
 		}
 	}
-	else if (layer > 0)
+	else if (_layer > 0)
 	{
 		for (int32 i = 0; i < nodeAmount; i++)
 		{
 			//If statement to check if this node is within a child node that has morton code(collision)
-			if (CheckIfNodeIsBlocked(layer, i))
+			if (CheckIfNodeIsBlocked(_layer, i))
 			{
-				int32 nodeIndex = octD.layers[layer].Emplace();
+				int32 nodeIndex = octD.layers[_layer].Emplace();
 
 				//do the layer caluclations
-				FDFNNode& node = octD.layers[layer][nodeIndex];
+				FDFNNode& node = octD.layers[_layer][nodeIndex];
 				FDFNLink link;
 				int32 childIndex = 0;
 				//Parent -> child. Giving parent node its child node
 				node.mortonCode = i;
 
-				if (GetIndexFromCode(layer - 1, node.mortonCode << 3, childIndex))
+				if (GetIndexFromCode(_layer - 1, node.mortonCode << 3, childIndex))
 				{
-					link.layer = layer - 1;
+					link.layer = _layer - 1;
 					link.nodeIndex = childIndex;
 					link.subNodeIndex = 0;
 					node.firstChild = link;
@@ -388,7 +383,7 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 					//Child -> parent. Go through 8 children and setting there parent link
 					for (int ci = 0; ci < 8; ci++)
 					{
-						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.layer = layer;
+						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.layer = _layer;
 						octD.layers[node.firstChild.layer][node.firstChild.nodeIndex + ci].parent.nodeIndex = nodeIndex;
 					}
 
@@ -396,7 +391,7 @@ void ADFNBoundingVolume::RasterizeLayer(uint8 layer)
 					{
 						FVector position;
 						GetNodePosition(nodeSize, i, position);
-						DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(layer), true, -1.0f, layer, 2.0f);
+						DrawDebugBox(world, position, FVector(nodeSize * 0.5f), FQuat::Identity, GetColorAt(_layer), true, -1.0f, _layer, 2.0f);
 					}
 				}
 			}
@@ -419,7 +414,6 @@ void ADFNBoundingVolume::RasterizeLeafNode()
 		FVector leafCenter;
 		GetNodePosition(leafSize, node.mortonCode, leafCenter);
 		FVector ori = leafCenter - FVector(leafSize * 0.5f);
-		//FVector lOri = ori + FVector(leafSize * 0.5f);
 
 		if (CheckCollisionOverlap(leafCenter, ECC_WorldStatic, leafSize))
 		{
@@ -433,8 +427,6 @@ void ADFNBoundingVolume::RasterizeLeafNode()
 				if (CheckCollisionOverlap(position, ECC_WorldStatic, voxelResolution))
 				{
 					//set voxel bit in the 64bit var
-
-					//octD.leafNodes[leafIndex].SetVoxelBit(v);
 					leaf.SetVoxelBit(v);
 
 					//Debug render voxel
@@ -450,10 +442,6 @@ void ADFNBoundingVolume::RasterizeLeafNode()
 	}
 }
 
-//Idea: Box needs to be power of 2, could make it that the bounding box is still the real navmesh bounds. so everything outside the
-//bounding box will be "blocked" and everything inside will be calculated normally.
-
-
 void ADFNBoundingVolume::RasterizeFirstLayer()
 {
 	octD.mortonCodes.Emplace();
@@ -463,42 +451,26 @@ void ADFNBoundingVolume::RasterizeFirstLayer()
 
 	FVector layerOneNodes = volumeSize / nodeSize;
 
-	//TArray<uint64> mortonCodes; //Storing voxels that have collision
-	//mortonCodes.Emplace();
-
 	UWorld* world = GetWorld();
-	//Modify to make it cover the whole octree eventually
-	//if (world)
-	//{
-	//	FVector origin = GetActorLocation();
-	//	FVector extent = nodeSize * GetActorScale3D();
-	//	DrawDebugBox(world, origin, extent, FQuat::Identity, FColor::Blue, true, -1.0f, 0, 2.0f);
-	//}
 
 	unsigned int X = RoundUp2Pow2(ceil(layerOneNodes.X));
 	unsigned int Y = RoundUp2Pow2(ceil(layerOneNodes.Y));
 	unsigned int Z = RoundUp2Pow2(ceil(layerOneNodes.Z));
 
 	int32 layerOneDim = FMath::Max3(X, Y, Z);
-	//int32 nodeAmount = layerOneDim * 3;
 
 	newVolumeSize = nodeSize * layerOneDim;
 	origin = GetActorLocation() - FVector(newVolumeSize * 0.5f);
 
 	octD.NumberLayers = 2 + log2(layerOneDim);
-	//UE_LOG(LogTemp, Warning, TEXT("My integer value idddddddddds: %d"), newVolumeSize);
 	UE_LOG(LogTemp, Warning, TEXT("!VOLUME size: %d"), newVolumeSize);
-	//int32 nodeAmount = 0;
 
 	int32 na = GetNodeAmountInLayer(1);
 	for (int i = 0; i < na; i++)
 	{
 		FVector position;
-		//int32 numNode = xi + yi + zi;
 		GetNodePosition(nodeSize, i, position);
 
-		//UE_LOG(LogTemp, Warning, TEXT("My integer value is: %d"), nodeAmount);
-		//UE_LOG(LogTemp, Warning, TEXT("My POSITION is: %s"), *position.ToString());
 		if (CheckCollisionOverlap(position, ECC_WorldStatic, nodeSize))
 		{
 			octD.mortonCodes[0].Add(i);
@@ -508,11 +480,11 @@ void ADFNBoundingVolume::RasterizeFirstLayer()
 	UE_LOG(LogTemp, Warning, TEXT("FINAL: My codes amount are: %d"), octD.mortonCodes.Num());
 }
 
-void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
+void ADFNBoundingVolume::BuildNeighborLinks(uint8 _layer)
 {
 	UWorld* world = GetWorld();
 
-	TArray<FDFNNode>& nodeLayer = octD.layers[layer];
+	TArray<FDFNNode>& nodeLayer = octD.layers[_layer];
 
 	for (int i = 0; i < nodeLayer.Num(); i++)
 	{
@@ -520,7 +492,7 @@ void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
 
 		uint_fast32_t x, y, z;
 		morton3D_64_decode(node.mortonCode, x, y, z);
-		float nodeSize = GetVoxelSize(layer);
+		float nodeSize = GetVoxelSize(_layer);
 		FVector nodePosition;
 		GetNodePosition(nodeSize, node.mortonCode, nodePosition);
 
@@ -530,7 +502,7 @@ void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
 			FDFNLink& neighborLink = node.neighbors[d];
 
 			FVector neighborCoords = FVector(x, y, z) + GetFaceDirection(d);
-			int32 layerSize = GetNodeAmountOfSide(layer);
+			int32 layerSize = GetNodeAmountOfSide(_layer);
 
 			//If node is outside the bounds
 			if (neighborCoords.X < 0 || neighborCoords.X >= layerSize ||
@@ -548,17 +520,17 @@ void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
 			uint64_t neightborMCode = morton3D_64_encode(nx, ny, nz);
 
 			int32 nIndex = 0;
-			if (GetIndexFromCode(layer, neightborMCode, nIndex))
+			if (GetIndexFromCode(_layer, neightborMCode, nIndex))
 			{
 				//Found neightbor, set link
-				neighborLink.layer = layer;
+				neighborLink.layer = _layer;
 				neighborLink.nodeIndex = nIndex;
 
 				//Draw debug line between direct neighbors
 				if (world && showNeighborLinks)
 				{
 					FVector neighborPos;
-					GetNodePosition(nodeSize, octD.layers[layer][nIndex].mortonCode, neighborPos);
+					GetNodePosition(nodeSize, octD.layers[_layer][nIndex].mortonCode, neighborPos);
 
 					//Color = prupleish
 					DrawDebugLine(world, nodePosition, neighborPos, FColor(127, 0, 255), true, -1.0f, 0, 2.0f);
@@ -568,7 +540,7 @@ void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
 			{
 				uint8 newLayer = 0;
 				int32 nnIndex = 0;
-				FindNeighborInParents(layer, i, d, newLayer, nnIndex);
+				FindNeighborInParents(_layer, i, d, newLayer, nnIndex);
 				neighborLink.layer = newLayer;
 				neighborLink.nodeIndex = nnIndex;
 			}
@@ -576,20 +548,17 @@ void ADFNBoundingVolume::BuildNeighborLinks(uint8 layer)
 	}
 }
 
-TArray<FDFNLink> ADFNBoundingVolume::GetNeighborLinks(const FDFNLink& link) const
+TArray<FDFNLink> ADFNBoundingVolume::GetNeighborLinks(const FDFNLink& _link) const
 {
 	TArray<FDFNLink> result;
 
-	//Always false
-	//bool isInsideLeaf = (link.layer == 0) && octD.layers[0][link.nodeIndex].firstChild.layer == 15;
-
 	//Go through subnodes
-	if (IsLeafWithSubnodes(link))
+	if (IsLeafWithSubnodes(_link))
 	{
 		for (uint8 d = 0; d < 6; d++)
 		{
 			FDFNLink neighbor;
-			if (GetSubnodeNeighbor(link, d, neighbor))
+			if (GetSubnodeNeighbor(_link, d, neighbor))
 				result.Add(neighbor);
 		}
 
@@ -597,7 +566,7 @@ TArray<FDFNLink> ADFNBoundingVolume::GetNeighborLinks(const FDFNLink& link) cons
 	}
 
 	//Go through node level
-	const FDFNNode& curNode = octD.layers[link.layer][link.nodeIndex];
+	const FDFNNode& curNode = octD.layers[_link.layer][_link.nodeIndex];
 
 	for (int d = 0; d < 6; d++)
 	{
@@ -610,12 +579,12 @@ TArray<FDFNLink> ADFNBoundingVolume::GetNeighborLinks(const FDFNLink& link) cons
 	return result;
 }
 
-bool ADFNBoundingVolume::GetSubnodeNeighbor(const FDFNLink& link, uint8 faceIndex, FDFNLink& outNeighbor) const
+bool ADFNBoundingVolume::GetSubnodeNeighbor(const FDFNLink& _link, uint8 _faceIndex, FDFNLink& _outNeighbor) const
 {
-	FIntVector local = SubnodeIndexToCoord(link.subNodeIndex);
+	FIntVector local = SubnodeIndexToCoord(_link.subNodeIndex);
 
-	uint8 axis = faceIndex / 2;
-	bool isPositiveDir = (faceIndex % 2) == 0;
+	uint8 axis = _faceIndex / 2;
+	bool isPositiveDir = (_faceIndex % 2) == 0;
 	int8 step = isPositiveDir ? 1 : -1;
 
 	FIntVector moved = local;
@@ -627,20 +596,20 @@ bool ADFNBoundingVolume::GetSubnodeNeighbor(const FDFNLink& link, uint8 faceInde
 	if (moved.X >= 0 && moved.X <= 3 && moved.Y >= 0 && moved.Y <= 3 && moved.Z >= 0 && moved.Z <= 3)
 	{
 		uint8 newSubindex = SubnodeCoordToIndex(moved.X, moved.Y, moved.Z);
-		const FDFNLeafNode& leaf = octD.leafNodes[octD.layers[0][link.nodeIndex].firstChild.nodeIndex];
+		const FDFNLeafNode& leaf = octD.leafNodes[octD.layers[0][_link.nodeIndex].firstChild.nodeIndex];
 
 		if (leaf.IsSubnodeSolid(newSubindex))
 			return false;
 
-		outNeighbor.layer = 0;
-		outNeighbor.nodeIndex = link.nodeIndex;
-		outNeighbor.subNodeIndex = newSubindex;
+		_outNeighbor.layer = 0;
+		_outNeighbor.nodeIndex = _link.nodeIndex;
+		_outNeighbor.subNodeIndex = newSubindex;
 		return true;
 	}
 
 	//Exeting the leaf, get neighbor link
-	const FDFNNode& thisNode = octD.layers[0][link.nodeIndex];
-	const FDFNLink& neighborNodeLink = thisNode.neighbors[faceIndex];
+	const FDFNNode& thisNode = octD.layers[0][_link.nodeIndex];
+	const FDFNLink& neighborNodeLink = thisNode.neighbors[_faceIndex];
 
 	//If link is valid
 	if (neighborNodeLink.layer == 15)
@@ -649,15 +618,13 @@ bool ADFNBoundingVolume::GetSubnodeNeighbor(const FDFNLink& link, uint8 faceInde
 	//Return if there is a free node or a leaf without solid voxels
 	if (!IsLeafWithSubnodes(neighborNodeLink))
 	{
-		outNeighbor = neighborNodeLink;
-		outNeighbor.nodeIndex = neighborNodeLink.nodeIndex;
-		outNeighbor.subNodeIndex = 0;
+		_outNeighbor = neighborNodeLink;
+		_outNeighbor.nodeIndex = neighborNodeLink.nodeIndex;
+		_outNeighbor.subNodeIndex = 0;
 		return true;
 	}
 
 	const FDFNNode& neighborNode = octD.layers[neighborNodeLink.layer][neighborNodeLink.nodeIndex];
-	//if (neighborNodeLink.layer != 0 || neighborNode.firstChild.layer == 15)
-		//return false;
 
 	FIntVector entry = local;
 	if (axis == 0) entry.X = isPositiveDir ? 0 : 3;
@@ -670,17 +637,17 @@ bool ADFNBoundingVolume::GetSubnodeNeighbor(const FDFNLink& link, uint8 faceInde
 	if (neighborLeaf.IsSubnodeSolid(entrySubIndex))
 		return false;
 
-	outNeighbor.layer = 0;
-	outNeighbor.nodeIndex = neighborNodeLink.nodeIndex;
-	outNeighbor.subNodeIndex = entrySubIndex;
+	_outNeighbor.layer = 0;
+	_outNeighbor.nodeIndex = neighborNodeLink.nodeIndex;
+	_outNeighbor.subNodeIndex = entrySubIndex;
 
 	return true;
 }
 
 //voxelSize will be halfed when testing overlap
-bool ADFNBoundingVolume::CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize)
+bool ADFNBoundingVolume::CheckCollisionOverlap(const FVector& _position, ECollisionChannel _colChannel, const float _voxelSize)
 {
-	bool occupied = GetWorld()->OverlapAnyTestByChannel(position, FQuat::Identity, colChannel, FCollisionShape::MakeBox(FVector(voxelSize * 0.5f)));
+	bool occupied = GetWorld()->OverlapAnyTestByChannel(_position, FQuat::Identity, _colChannel, FCollisionShape::MakeBox(FVector(_voxelSize * 0.5f)));
 	return occupied;
 }
 
@@ -694,10 +661,6 @@ void ADFNBoundingVolume::Generate()
 	//Creates for each layer, morton codes
 	CreateLayerMortonCodes();
 
-	//clear leafnodes
-	//allocate leafnodes
-	//octD.leafNodes.Empty();
-
 	octD.leafNodes.AddDefaulted(octD.mortonCodes[0].Num() * 8);
 
 	for (int i = 0; i < octD.NumberLayers; i++)
@@ -706,7 +669,6 @@ void ADFNBoundingVolume::Generate()
 		octD.layers.Emplace();
 	}
 
-	//for (int i = 0; i < octD.NumberLayers - 1; i++)
 	for (int i = 0; i < octD.NumberLayers; i++)
 	{
 		//Rasterrize all layers(down to up)
@@ -733,46 +695,32 @@ void ADFNBoundingVolume::ClearVolume()
 	octD.Reset();
 }
 
-bool ADFNBoundingVolume::CalculatePositionFromLink(const FDFNLink& link, FVector& position) const
+bool ADFNBoundingVolume::CalculatePositionFromLink(const FDFNLink& _link, FVector& _position) const
 {
-	const FDFNNode& node = octD.layers[link.layer][link.nodeIndex];
-	float nSize = GetVoxelSize(link.layer);
-	GetNodePosition(nSize, node.mortonCode, position);
+	const FDFNNode& node = octD.layers[_link.layer][_link.nodeIndex];
+	float nSize = GetVoxelSize(_link.layer);
+	GetNodePosition(nSize, node.mortonCode, _position);
 
 	//Check if needing position from a leafnode's subnode
-	if (IsLeafWithSubnodes(link))
+	if (IsLeafWithSubnodes(_link))
 	{
 		const float subSize = nSize * 0.25f;
-		const FIntVector coord = SubnodeIndexToCoord(link.subNodeIndex);
-		position = position - FVector(nSize * 0.5f) + FVector(coord) * subSize + FVector(subSize * 0.5f);
+		const FIntVector coord = SubnodeIndexToCoord(_link.subNodeIndex);
+		_position = _position - FVector(nSize * 0.5f) + FVector(coord) * subSize + FVector(subSize * 0.5f);
 	}
 
 	return true;
 }
 
-bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFNLink& link) const
+bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& _position, FDFNLink& _link) const
 {
-	//check if position is inside the bounding volume
-	//check if there are layers
-	//Origin of volume
-	//position within the volume
-	//while loop through all layers nodes until link is found
-		//if found inside a node, create link and add layer and node index to it
-		//if inside layer 0 calculate voxel position
-		//encode morton code
-		//GetIndexForCode
-		//make link and set layer and nodeindex and subindex
-
 	//Is position inside the bounding volume
 	FVector min = origin;
 	FVector max = origin + FVector(newVolumeSize);
 
-	//UE_LOG(LogTemp, Warning, TEXT("origin=%s volumeSize=%s min=%s max=%s testPos=%s"),
-	//	*origin.ToString(), *FVector(newVolumeSize).ToString(), *min.ToString(), *max.ToString(), *position.ToString());
-
-	if (position.X < min.X || position.X > max.X ||
-		position.Y < min.Y || position.Y > max.Y ||
-		position.Z < min.Z || position.Z > max.Z)
+	if (_position.X < min.X || _position.X > max.X ||
+		_position.Y < min.Y || _position.Y > max.Y ||
+		_position.Z < min.Z || _position.Z > max.Z)
 	{
 		return false;
 	}
@@ -781,7 +729,7 @@ bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFN
 	if (octD.NumberLayers <= 0)
 		return false;
 
-	FVector localPos = position - min;
+	FVector localPos = _position - min;
 
 	uint8 currentLayer = octD.NumberLayers - 1;
 	while (currentLayer < octD.NumberLayers)
@@ -806,9 +754,9 @@ bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFN
 		//Node with no more children, means this is the link
 		if (node.firstChild.layer == 15)
 		{
-			link.layer = currentLayer;
-			link.nodeIndex = foundIndex;
-			link.subNodeIndex = 0;
+			_link.layer = currentLayer;
+			_link.nodeIndex = foundIndex;
+			_link.subNodeIndex = 0;
 			return true;
 		}
 
@@ -820,9 +768,9 @@ bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFN
 			//Leaf is empty, return
 			if (leafMask.isEmpty())
 			{
-				link.layer = 0;
-				link.nodeIndex = foundIndex;
-				link.subNodeIndex = 0;
+				_link.layer = 0;
+				_link.nodeIndex = foundIndex;
+				_link.subNodeIndex = 0;
 				return true;
 			}
 
@@ -830,7 +778,7 @@ bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFN
 			GetNodePosition(voxelSize, node.mortonCode, nodePos);
 
 			FVector leafOrigin = nodePos - FVector(voxelSize * 0.5f);
-			FVector local = position - leafOrigin;
+			FVector local = _position - leafOrigin;
 
 			float subNodeSize = voxelSize * 0.25f;
 			FIntVector subCoord;
@@ -845,9 +793,9 @@ bool ADFNBoundingVolume::CalculateLinkFromPosition(const FVector& position, FDFN
 			if (leafMask.IsSubnodeSolid(subIndex))
 				return false;
 
-			link.layer = 0;
-			link.nodeIndex = foundIndex;
-			link.subNodeIndex = subIndex;
+			_link.layer = 0;
+			_link.nodeIndex = foundIndex;
+			_link.subNodeIndex = subIndex;
 			return true;
 		}
 
@@ -894,11 +842,11 @@ void ADFNBoundingVolume::PostEditMove(bool bFinished)
 }
 #endif
 
-const FColor& ADFNBoundingVolume::GetColorAt(int32 index) const
+const FColor& ADFNBoundingVolume::GetColorAt(int32 _index) const
 {
-	if (layerColors.IsValidIndex(index))
+	if (layerColors.IsValidIndex(_index))
 	{
-		return layerColors[index];
+		return layerColors[_index];
 	}
 	else
 	{

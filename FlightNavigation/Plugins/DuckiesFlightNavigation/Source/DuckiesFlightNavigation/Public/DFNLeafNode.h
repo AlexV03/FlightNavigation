@@ -14,20 +14,14 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLeafNode
 	inline bool isFullyBlocked() const { return voxel == 0xFFFFFFFFFFFFFFFFull; }
 	inline bool isOccupied() const { return voxel != 0; }
 
-	inline bool IsSubnodeSolid(uint8 subIndex) const
+	inline bool IsSubnodeSolid(uint8 _subIndex) const
 	{
-		return (voxel & (1ull << subIndex)) != 0;
+		return (voxel & (1ull << _subIndex)) != 0;
 	}
 
 	//Set specific bit to index
-	void SetVoxelBit(uint8 index)
+	void SetVoxelBit(uint8 _index)
 	{
-		voxel |= 1ULL << index;
+		voxel |= 1ULL << _index;
 	}
-
-	//Get specific bit
-	/*uint8 GetVoxelBit(uint64 mCode)
-	{
-
-	}*/
 };

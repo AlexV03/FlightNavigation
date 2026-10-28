@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "OctreeData.h"
-
 #include "DFNBoundingVolume.generated.h"
 
 UCLASS()
@@ -36,42 +35,41 @@ protected:
 
 	FDFNOctreeData octD;
 
-	unsigned int RoundUp2Pow2(unsigned int value);
-	bool GetNodePosition(float nodeSize, uint_fast64_t mCode, FVector& position) const;
-	uint64 GetParentCode(uint64 childCode);
-	uint64 GetChildCode(uint64 parentCode, unsigned int index);
-	int32 GetNodeAmountInLayer(uint8 layer) const;
-	float GetVoxelSize(uint8 layer) const;
-	bool GetIndexFromCode(uint8 layer, uint64 mCode, int32& cIndex) const;
-	bool CheckIfNodeIsBlocked(uint8 layer, uint64 mCode);
-	FVector GetFaceDirection(int faceIdx);
-	int32 GetNodeAmountOfSide(uint8 layer) const;
-	void FindNeighborInParents(uint8 layer, int32 nodeIndex, uint8 faceIndex, uint8& parentLayer, int32& neighborNodeIndex);
-	void CollectTraversableLinks(const FDFNLink& link, uint8 faceIndex, TArray<FDFNLink>& outLinks) const;
-	uint8 SubnodeCoordToIndex(uint8 x, uint8 y, uint8 z) const;
-	FIntVector SubnodeIndexToCoord(uint8 subIndex) const;
-	bool IsLeafWithSubnodes(const FDFNLink& link) const;
+	unsigned int RoundUp2Pow2(unsigned int _value);
+	bool GetNodePosition(float _nodeSize, uint_fast64_t _mCode, FVector& _position) const;
+	uint64 GetParentCode(uint64 _childCode);
+	uint64 GetChildCode(uint64 _parentCode, unsigned int _index);
+	int32 GetNodeAmountInLayer(uint8 _layer) const;
+	float GetVoxelSize(uint8 _layer) const;
+	bool GetIndexFromCode(uint8 _layer, uint64 _mCode, int32& _cIndex) const;
+	bool CheckIfNodeIsBlocked(uint8 _layer, uint64 _mCode);
+	FVector GetFaceDirection(int _faceIdx);
+	int32 GetNodeAmountOfSide(uint8 _layer) const;
+	void FindNeighborInParents(uint8 _layer, int32 _nodeIndex, uint8 _faceIndex, uint8& _parentLayer, int32& _neighborNodeIndex);
+	void CollectTraversableLinks(const FDFNLink& _link, uint8 _faceIndex, TArray<FDFNLink>& _outLinks) const;
+	uint8 SubnodeCoordToIndex(uint8 _x, uint8 _y, uint8 _z) const;
+	FIntVector SubnodeIndexToCoord(uint8 _subIndex) const;
+	bool IsLeafWithSubnodes(const FDFNLink& _link) const;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void RasterizeLayer(uint8 layer);
+	void RasterizeLayer(uint8 _layer);
 	void RasterizeLeafNode();
 	void RasterizeFirstLayer();
-	void BuildNeighborLinks(uint8 layer);
-	TArray<FDFNLink> GetNeighborLinks(const FDFNLink& link) const;
-	bool GetSubnodeNeighbor(const FDFNLink& link, uint8 faceIndex, FDFNLink& outNeighbor) const;
-	bool CheckCollisionOverlap(const FVector& position, ECollisionChannel colChannel, const float voxelSize);
+	void BuildNeighborLinks(uint8 _layer);
+	TArray<FDFNLink> GetNeighborLinks(const FDFNLink& _link) const;
+	bool GetSubnodeNeighbor(const FDFNLink& _link, uint8 _faceIndex, FDFNLink& _outNeighbor) const;
+	bool CheckCollisionOverlap(const FVector& _position, ECollisionChannel _colChannel, const float _voxelSize);
 	UFUNCTION(CallInEditor, Category = "Debug")
 	void Generate();
 	UFUNCTION(CallInEditor, Category = "Debug")
 	void ClearVolume();
 
-	bool CalculatePositionFromLink(const FDFNLink& link, FVector& position) const;
-	bool CalculateLinkFromPosition(const FVector& position, FDFNLink& link) const;
+	bool CalculatePositionFromLink(const FDFNLink& _link, FVector& _position) const;
+	bool CalculateLinkFromPosition(const FVector& _position, FDFNLink& _link) const;
 
 	bool IsGenerated() const { return octD.NumberLayers > 0 && octD.layers.Num() == octD.NumberLayers; }
-	//uint32 GetGenerationId() const { return bvgId; }
 
 	bool IsInsideNavVolume(const FVector& _position) const;
 
@@ -86,8 +84,6 @@ private:
 	FVector origin;
 	static const TArray<FColor> layerColors;
 
-	//uint32 bvgId = 0;
-
-	const FColor& GetColorAt(int32 index) const;
+	const FColor& GetColorAt(int32 _index) const;
 	void CreateLayerMortonCodes();
 };

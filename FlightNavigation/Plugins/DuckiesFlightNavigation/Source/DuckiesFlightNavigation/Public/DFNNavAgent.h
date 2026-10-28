@@ -19,7 +19,7 @@ public:
 	UDFNNavAgent();
 
 	UPROPERTY(EditAnywhere, Category = "Navigation")
-	TObjectPtr<ADFNBoundingVolume> bv = nullptr;//Make private and get it on beginplay from the scene
+	TObjectPtr<ADFNBoundingVolume> bv = nullptr;
 
 	//How much a target actor has to move before path is recalculated
 	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "0.0"))
@@ -35,7 +35,7 @@ public:
 	bool drawPath = true;
 
 	UFUNCTION(BlueprintCallable, Category = "Navigation")
-	void MoveTowards(APawn* pawn, const FVector _destination, const AActor* _targetActor, const float _acceptanceRadius);
+	void MoveTowards(APawn* _pawn, const FVector _destination, const AActor* _targetActor, const float _acceptanceRadius);
 
 	UFUNCTION(BlueprintCallable, Category = "Navigation")
 	void StopMovement();
@@ -52,26 +52,20 @@ private:
 	bool FindVolume();
 	bool EnsurePathFinder();
 	void FindPath();
-	//bool NeedsRecalculation() const;
-	bool HasMoved(const FVector& current, const FVector& last) const;
-	void FollowPath(float deltaTime);
+	bool HasMoved(const FVector& _current, const FVector& _last) const;
+	void FollowPath(float _deltaTime);
 	void FinishMove();
-	void SmoothPath();
+	//void SmoothPath();
 
 	TUniquePtr<DFNPathFinder> pathFinder;
 	const ADFNBoundingVolume* pathFinderVolume = nullptr;
 
 	TWeakObjectPtr<AActor> owningActor;
-	//TWeakObjectPtr<const AActor> targetActor;
 	FVector destination = FVector::ZeroVector;
-	//FVector lastTarget = FVector::ZeroVector;
-	//uint32 lastGenerationId = MAX_uint32;
 	float acceptanceRadius = 0.0f;
 
 	TArray<FVector> followPath;
 	int32 waypointIndex = 0;
 
 	bool isMoving = false;
-	//bool pathFound = false;
-	//bool forceRecalculation = false;
 };

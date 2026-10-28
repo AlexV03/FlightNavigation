@@ -4,7 +4,6 @@
 #include "DFNLink.h"
 #include "DFNNode.generated.h"
 
-
 USTRUCT()
 struct DUCKIESFLIGHTNAVIGATION_API FDFNNode
 {
@@ -14,8 +13,6 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNNode
 	FDFNLink parent;
 	FDFNLink neighbors[6];
 	uint64_t mortonCode = 0;
-	//uint32_t mortonCode;
-	//Bool isEmpty??
 };
 
 

@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "DFNLink.generated.h"
 
-
 USTRUCT()
 struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 {
@@ -20,12 +19,6 @@ struct DUCKIESFLIGHTNAVIGATION_API FDFNLink
 	{
 		return layer == other.layer && nodeIndex == other.nodeIndex && subNodeIndex == other.subNodeIndex;
 	}
-	//GetLayer()
-	//GetNodeIndex()
-	//GetSubnodeIndex()
-
-	//subnodeIndexToCoord()
-	//CoordToSubnode()
 };
 
 
